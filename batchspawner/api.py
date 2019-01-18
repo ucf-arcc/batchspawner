@@ -9,8 +9,18 @@ class BatchSpawnerAPIHandler(APIHandler):
         user = self.get_current_user()
         data = self.get_json_body()
         port = int(data.get('port', 0))
-        user.spawner.current_port = port
-        self.finish(json.dumps({"message": "BatchSpawner port configured"}))
+        message = ''
+        spawner = user.spawner
+        try:
+            from wrapspawner import WrapSpawner
+            if isinstance(spawner, WrapSpawner):
+                message = "WrapSpawner detected: using user.spawner.child_spawner; "
+                spawner = spawner.child_spawner
+        except:
+            pass
+        spawner.current_port = port
+        message = message + "BatchSpawner port configured"
+        self.finish(json.dumps({"message": message}))
         self.set_status(201)
 
 default_handlers.append((r"/api/batchspawner", BatchSpawnerAPIHandler))
